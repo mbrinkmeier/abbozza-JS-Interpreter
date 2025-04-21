@@ -732,7 +732,7 @@ Interpreter.prototype.initFunction = function(globalObject) {
   "var apply_ = Function.prototype.apply;",
   "Function.prototype.apply = function apply(thisArg, args) {",
     "var a2 = [];",
-    "for (var i = 0; i < args.length; i++) {",
+    "for (var i = 0; args && i < args.length; i++) {",
       "a2[i] = args[i];",
     "}",
     "return apply_(this, thisArg, a2);",  // Note: Non-standard 'this' arg.
@@ -2582,14 +2582,19 @@ Interpreter.prototype.createNativeFunction = function(nativeFunc,
  * @param {!Function} asyncFunc JavaScript function.
  * @returns {!Interpreter.Object} New function.
  */
-Interpreter.prototype.createAsyncFunction = function(asyncFunc) {
-  var func = this.createFunctionBase_(asyncFunc.length, true);
+Interpreter.prototype.createAsyncFunction = function(asyncFunc, nArgs = -1) {
+  /** MODIFIED */
+  if ( nArgs  == -1 ) {
+    nArgs = asyncFunc.length;
+  }
+  var func = this.createFunctionBase_(nArgs, true);
   func.asyncFunc = asyncFunc;
   asyncFunc.id = this.functionCounter_++;
   this.setProperty(func, 'name', asyncFunc.name,
       Interpreter.READONLY_NONENUMERABLE_DESCRIPTOR);
   return func;
 };
+
 
 /**
  * Converts from a native JavaScript object or value to a JS-Interpreter object.
@@ -3038,9 +3043,9 @@ Interpreter.prototype.setNativeFunctionPrototype =
  * @param {!Function} wrapper Function object.
  */
 Interpreter.prototype.setAsyncFunctionPrototype =
-    function(obj, name, wrapper) {
+    function(obj, name, wrapper, nArgs = -1) {
   this.setProperty(obj.properties['prototype'], name,
-      this.createAsyncFunction(wrapper),
+      this.createAsyncFunction(wrapper, nArgs),
       Interpreter.NONENUMERABLE_DESCRIPTOR);
 };
 
@@ -4137,7 +4142,10 @@ Interpreter.prototype['stepCallExpression'] = function(stack, state, node) {
         thisInterpreter.paused_ = false;
       };
       // Force the argument lengths to match, then append the callback.
-      var argLength = func.asyncFunc.length - 1;
+      // var argLength = func.asyncFunc.length - 1;
+      console.log(func);
+      var argLength = this.getProperty(func,"length") - 1;
+      console.log(`nARGS ${argLength}`);
       var argsWithCallback = state.arguments_.concat(
           new Array(argLength)).slice(0, argLength);
       argsWithCallback.push(callback);
