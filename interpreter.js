@@ -4143,9 +4143,7 @@ Interpreter.prototype['stepCallExpression'] = function(stack, state, node) {
       };
       // Force the argument lengths to match, then append the callback.
       // var argLength = func.asyncFunc.length - 1;
-      console.log(func);
       var argLength = this.getProperty(func,"length") - 1;
-      console.log(`nARGS ${argLength}`);
       var argsWithCallback = state.arguments_.concat(
           new Array(argLength)).slice(0, argLength);
       argsWithCallback.push(callback);
