@@ -2809,6 +2809,9 @@ Interpreter.prototype.getProperty = function(obj, name) {
     }
   }
   do {
+    // Look inside obj.data native object MODIFIED!
+    // if ( obj.data && obj.data[name] ) return obj.data[name];
+
     if (obj.properties && name in obj.properties) {
       var getter = obj.getter[name];
       if (getter) {
@@ -3270,7 +3273,13 @@ Interpreter.prototype.getValue = function(ref) {
     return this.getValueFromScope(ref[1]);
   } else {
     // An obj/prop components tuple (foo.bar).
-    return this.getProperty(ref[0], ref[1]);
+    // MODIFIED
+    var prop = this.getProperty(ref[0], ref[1]);
+    if ( prop ) return prop
+    if ( ref[0].data ) {
+      return ref[0].data[ref[1]];
+    }
+    return null;
   }
 };
 
@@ -4020,7 +4029,15 @@ Interpreter.prototype['stepCallExpression'] = function(stack, state, node) {
     var func = state.value;
     if (Array.isArray(func)) {
       state.func_ = this.getValue(func);
-      if (func[0] === Interpreter.SCOPE_REFERENCE) {
+      // MODIFIED
+      if ( typeof(state.func_) == "undefined" ) {
+        state.funcThis_ = func[0];
+        // if ( state.funcThis_.data ) {
+        //   console.log(state.funcThis_.data);
+        // }
+        // console.log(state.funcThis_);
+        // console.log(func);
+      } else if (func[0] === Interpreter.SCOPE_REFERENCE) {
         // (Globally or locally) named function.  Is it named 'eval'?
         state.directEval_ = (func[1] === 'eval');
       } else {
